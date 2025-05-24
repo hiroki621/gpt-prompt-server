@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 export default async function handler(req, res) {
   let { gist_id, filename, content, horse, type } = req.body;
 
-  // ✅ Gist IDを固定（無効 or 未設定の値を強制補正）
+  // ✅ Gist ID のバリデーション & 強制補正
   const FIXED_GIST_ID = '81d3d0662dc08dfd9aee87c6c9b61299';
   if (!gist_id || !/^[a-f0-9]{32}$/.test(gist_id)) {
     gist_id = FIXED_GIST_ID;
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required parameter: content' });
   }
 
-  // ✅ filename が未指定の場合は自動生成（例：rl-Wonder_Scale.txt）
+  // ✅ filename 自動生成（スペースはアンダースコアに）
   if (!filename && horse && type) {
     const prefixMap = { rl: 'rl-', hcl: 'hcl-' };
     const safeHorse = horse.replace(/\s+/g, '_');
@@ -39,11 +39,16 @@ export default async function handler(req, res) {
     });
 
     const gistData = await getResponse.json();
+
+    if (!gistData.files[filename] && !Object.keys(gistData.files).length) {
+      return res.status(404).json({ error: `Target file '${filename}' not found in the specified Gist.` });
+    }
+
+    // ✅ 既存ログとの安全な結合（末尾に追記）
     const existingContent = gistData.files[filename]?.content || '';
+    const updatedContent = existingContent.trimEnd() + '\n' + content.trim() + '\n';
 
-    const updatedContent = existingContent + '\n' + content;
-
-    // ✅ Gistファイルの更新（PATCH）
+    // ✅ PATCH リクエストでファイルを更新
     const patchResponse = await fetch(gistUrl, {
       method: 'PATCH',
       headers: {
@@ -60,8 +65,8 @@ export default async function handler(req, res) {
     });
 
     if (!patchResponse.ok) {
-      const error = await patchResponse.text();
-      return res.status(500).json({ error: 'Failed to update Gist', detail: error });
+      const errorText = await patchResponse.text();
+      return res.status(500).json({ error: 'Failed to update Gist', detail: errorText });
     }
 
     return res.status(200).json({ message: 'Gist updated successfully' });
