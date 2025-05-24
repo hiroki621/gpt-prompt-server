@@ -40,15 +40,11 @@ export default async function handler(req, res) {
 
     const gistData = await getResponse.json();
 
-    if (!gistData.files[filename] && !Object.keys(gistData.files).length) {
-      return res.status(404).json({ error: `Target file '${filename}' not found in the specified Gist.` });
-    }
-
-    // ✅ 既存ログとの安全な結合（末尾に追記）
+    // ✅ 新規ファイルも許容：既存コンテンツがなければ空扱い
     const existingContent = gistData.files[filename]?.content || '';
     const updatedContent = existingContent.trimEnd() + '\n' + content.trim() + '\n';
 
-    // ✅ PATCH リクエストでファイルを更新
+    // ✅ PATCH リクエストでファイルを更新または新規作成
     const patchResponse = await fetch(gistUrl, {
       method: 'PATCH',
       headers: {
