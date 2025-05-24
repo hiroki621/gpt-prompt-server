@@ -1,28 +1,13 @@
 export default async function handler(req, res) {
   const { type, horse } = req.query;
 
-  if (!type || (type === 'rl' && !horse)) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+  if (!type || type !== 'rl' || !horse) {
+    return res.status(400).json({ error: 'Missing or invalid parameters' });
   }
 
-  const gistId = '81d3d0662dc08dfd9aee87c6c9b61299'; // 共通Gist ID
-
-  const prefixMap = {
-    rl: 'rl-',
-    hcl: '' // HCLはファイル名固定のためプレフィックスなし
-  };
-
-  let filename;
-
-  if (type === 'rl') {
-    const safeHorseName = horse.replace(/\s+/g, '_'); // スペースをアンダースコアに変換
-    filename = `${prefixMap[type]}${safeHorseName}.txt`;
-  } else if (type === 'hcl') {
-    filename = 'hcl-master.txt'; // HCLは固定ファイル名
-  } else {
-    return res.status(400).json({ error: 'Invalid log type' });
-  }
-
+  const gistId = '81d3d0662dc08dfd9aee87c6c9b61299'; // RL専用Gist ID（固定）
+  const safeHorseName = horse.replace(/\s+/g, '_'); // スペースをアンダースコアに変換
+  const filename = `rl-${safeHorseName}.txt`;
   const rawUrl = `https://gist.githubusercontent.com/hiroki621/${gistId}/raw/${filename}`;
 
   try {
