@@ -5,27 +5,30 @@ export default async function handler(req, res) {
 
   const { type, horses } = req.body;
 
-  if (!type || !Array.isArray(horses) || type !== 'hcl') {
+  if (!type || type !== 'hcl' || !Array.isArray(horses)) {
     return res.status(400).json({ error: 'Invalid or missing parameters' });
   }
 
-  const gistId = '81d3d0662dc08dfd9aee87c6c9b61299'; // 共通Gist ID
-  const filename = 'hcl-master.txt'; // HCLは1ファイルで全頭管理
-  const rawUrl = `https://gist.githubusercontent.com/hiroki621/${gistId}/raw/${filename}`;
+  const gistId = '81d3d0662dc08dfd9aee87c6c9b61299'; // 共通のGist ID
+  const filename = 'hcl-master.txt';
 
   try {
-    const response = await fetch(rawUrl);
+    const response = await fetch(`https://api.github.com/gists/${gistId}`);
     if (!response.ok) {
-      return res.status(response.status).json({ error: 'Failed to fetch file from Gist' });
+      return res.status(response.status).json({ error: 'Failed to fetch Gist metadata' });
     }
 
-    const fullText = await response.text();
-    const logs = {};
+    const gistData = await response.json();
+    const fileContent = gistData.files[filename]?.content;
 
+    if (!fileContent) {
+      return res.status(404).json({ error: 'hcl-master.txt not found in Gist' });
+    }
+
+    const logs = {};
     horses.forEach(horse => {
-      // 馬ごとのHCL構文を正規表現で抽出（3行構成）
       const regex = new RegExp(`^【${horse}】\\n騎手：.*\\n調教師：.*`, 'm');
-      const match = fullText.match(regex);
+      const match = fileContent.match(regex);
       logs[horse] = { text: match ? match[0] : null };
     });
 
