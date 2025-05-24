@@ -4,14 +4,20 @@ import fetch from 'node-fetch';
 export default async function handler(req, res) {
   let { gist_id, filename, content, horse, type } = req.body;
 
-  if (!gist_id || !content) {
-    return res.status(400).json({ error: 'Missing required parameters (gist_id or content)' });
+  // ✅ Gist IDを固定（無効 or 未設定の値を強制補正）
+  const FIXED_GIST_ID = '81d3d0662dc08dfd9aee87c6c9b61299';
+  if (!gist_id || !/^[a-f0-9]{32}$/.test(gist_id)) {
+    gist_id = FIXED_GIST_ID;
   }
 
-  // filename が指定されていない場合、自動生成
+  if (!content) {
+    return res.status(400).json({ error: 'Missing required parameter: content' });
+  }
+
+  // ✅ filename が未指定の場合は自動生成（例：rl-Wonder_Scale.txt）
   if (!filename && horse && type) {
     const prefixMap = { rl: 'rl-', hcl: 'hcl-' };
-    const safeHorse = horse.replace(/\s+/g, '_'); // スペースをアンダーバーに
+    const safeHorse = horse.replace(/\s+/g, '_');
     filename = `${prefixMap[type] || ''}${safeHorse}.txt`;
   }
 
@@ -24,7 +30,7 @@ export default async function handler(req, res) {
   try {
     const gistUrl = `https://api.github.com/gists/${gist_id}`;
 
-    // Gistファイル取得
+    // ✅ Gistファイルの取得
     const getResponse = await fetch(gistUrl, {
       headers: {
         Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -37,7 +43,7 @@ export default async function handler(req, res) {
 
     const updatedContent = existingContent + '\n' + content;
 
-    // PATCHで更新
+    // ✅ Gistファイルの更新（PATCH）
     const patchResponse = await fetch(gistUrl, {
       method: 'PATCH',
       headers: {
