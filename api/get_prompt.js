@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     prospect: 'https://gist.githubusercontent.com/hiroki621/cffe8d790344126ae4eef668d605290e/raw/Processor_Prospect_netkeibaStyle.txt',
     recap: 'https://gist.githubusercontent.com/hiroki621/b2b4620eefaeae5765fcf3407ad142a3/raw/Processor_Recap.txt',
     racelog: 'https://gist.githubusercontent.com/hiroki621/fb055d7ff8413d292b15d5bfd0627bc5/raw/Processor_RaceLog.txt',
-    horseconnectionslog: 'https://gist.githubusercontent.com/hiroki621/d8d3bad3b0efc66db657ee17b14c46da/raw/Processor_HorseConnectionsLog.txt'
+    horseconnectionslog: 'https://gist.githubusercontent.com/hiroki621/3b43ec8620ca6d562d86c1c573439cb9/raw/Processor_HorseConnectionsLog.txt'
   };
 
   const url = PROMPT_URLS[type];
