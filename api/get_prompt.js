@@ -8,8 +8,6 @@ export default async function handler(req, res) {
     horseconnectionslog: 'https://gist.githubusercontent.com/hiroki621/d8d3bad3b0efc66db657ee17b14c46da/raw/Processor_HorseConnectionsLog.txt'
   };
 
-  };
-
   const url = PROMPT_URLS[type];
 
   if (!url) {
