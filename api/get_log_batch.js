@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid or missing parameters' });
   }
 
-  const gistId = '81d3d0662dc08dfd9aee87c6c9b61299'; // 共通のGist ID
+  const gistId = 'd8d3bad3b0efc66db657ee17b14c46da';
   const filename = 'hcl-master.txt';
 
   try {
