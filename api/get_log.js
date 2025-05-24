@@ -1,12 +1,19 @@
+// api/get_log.js
 export default async function handler(req, res) {
   const { type, horse } = req.query;
 
-  if (!type || type !== 'rl' || !horse) {
-    return res.status(400).json({ error: 'Missing or invalid parameters' });
+  // ✅ バリデーション：RL専用
+  if (!type || type !== 'rl') {
+    return res.status(400).json({ error: 'Invalid type: get_log supports only type=rl. Use get_log_batch for HCL.' });
   }
 
-  const gistId = '81d3d0662dc08dfd9aee87c6c9b61299'; // RL専用Gist ID（固定）
-  const safeHorseName = horse.replace(/\s+/g, '_'); // スペースをアンダースコアに変換
+  if (!horse) {
+    return res.status(400).json({ error: 'Missing required parameter: horse' });
+  }
+
+  // ✅ ファイル構成：RL専用（1馬＝1ファイル）
+  const gistId = '81d3d0662dc08dfd9aee87c6c9b61299'; // RL専用Gist ID
+  const safeHorseName = horse.replace(/\s+/g, '_');
   const filename = `rl-${safeHorseName}.txt`;
   const rawUrl = `https://gist.githubusercontent.com/hiroki621/${gistId}/raw/${filename}`;
 
