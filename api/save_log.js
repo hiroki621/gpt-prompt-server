@@ -1,5 +1,5 @@
 // api/save_log.js
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   const { gist_id, filename, content } = req.body;
@@ -12,6 +12,8 @@ export default async function handler(req, res) {
 
   try {
     const gistUrl = `https://api.github.com/gists/${gist_id}`;
+    
+    // 既存ファイル取得
     const getResponse = await fetch(gistUrl, {
       headers: {
         Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -21,8 +23,11 @@ export default async function handler(req, res) {
 
     const gistData = await getResponse.json();
     const existingContent = gistData.files[filename]?.content || '';
+
+    // 新しい内容を追加
     const updatedContent = existingContent + '\n' + content;
 
+    // PATCHで更新
     const patchResponse = await fetch(gistUrl, {
       method: 'PATCH',
       headers: {
@@ -44,7 +49,9 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({ message: 'Gist updated successfully' });
+
   } catch (error) {
     return res.status(500).json({ error: 'Unexpected error', detail: error.message });
   }
 }
+
