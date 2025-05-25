@@ -1,9 +1,8 @@
 // api/save_to_notion.js
 import { Client } from "@notionhq/client";
 
-// ✅ Notion初期化
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
-const DATABASE_ID = "1fee5bd087a980528c40dc22697aad8c"; // ← 必要に応じて書き換え
+const DATABASE_ID = "1fee5bd087a980528c40dc22697aad8c";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -16,9 +15,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // ✅ 本文を段落ごとに分割してchildrenとして渡す
+  // 段落ごとに本文を分割（2つ以上の改行で区切る）
   const contentBlocks = content
-    .split(/\n{2,}/) // 2つ以上の改行で段落分割
+    .split(/\n{2,}/)
     .filter(p => p.trim() !== "")
     .map(paragraph => ({
       object: "block",
@@ -36,7 +35,8 @@ export default async function handler(req, res) {
     }));
 
   try {
-    const response = await notion.pages.create({
+    // Step 1: ページ作成（プロパティのみ）
+    const page = await notion.pages.create({
       parent: { database_id: DATABASE_ID },
       properties: {
         "馬名": {
@@ -68,12 +68,17 @@ export default async function handler(req, res) {
           },
         },
       },
-      children: contentBlocks, // ✅ 本文をここに渡す
     });
 
-    res.status(200).json({ success: true, notionPageId: response.id });
+    // Step 2: 本文ブロックをページに追加
+    await notion.blocks.children.append({
+      block_id: page.id,
+      children: contentBlocks,
+    });
+
+    res.status(200).json({ success: true, notionPageId: page.id });
   } catch (error) {
-    console.error("❌ Notion API Error:", error);
+    console.error("❌ Notion保存エラー:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 }
