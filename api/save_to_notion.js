@@ -1,14 +1,9 @@
 // api/save_to_notion.js
-
 import { Client } from "@notionhq/client";
 
-// ✅ Notionクライアント初期化
-const notion = new Client({
-  auth: process.env.NOTION_TOKEN,
-});
-
-// ✅ Notion Database ID を直接指定（もしくは process.env.NOTION_DATABASE_ID でもOK）
-const DATABASE_ID = "1fee5bd087a980528c40dc22697aad8c";
+// ✅ Notion初期化
+const notion = new Client({ auth: process.env.NOTION_TOKEN });
+const DATABASE_ID = "1fee5bd087a980528c40dc22697aad8c"; // ← 必要に応じて書き換え
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -21,27 +16,28 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // ✅ 長文を分割（Notionのrich_text制限への対策）
-  const contentBlocks = content.match(/(.|[\r\n]){1,1000}/g).map(text => ({
-    object: "block",
-    type: "paragraph",
-    paragraph: {
-      rich_text: [
-        {
-          type: "text",
-          text: {
-            content: text,
+  // ✅ 本文を段落ごとに分割してchildrenとして渡す
+  const contentBlocks = content
+    .split(/\n{2,}/) // 2つ以上の改行で段落分割
+    .filter(p => p.trim() !== "")
+    .map(paragraph => ({
+      object: "block",
+      type: "paragraph",
+      paragraph: {
+        rich_text: [
+          {
+            type: "text",
+            text: {
+              content: paragraph,
+            },
           },
-        },
-      ],
-    },
-  }));
+        ],
+      },
+    }));
 
   try {
     const response = await notion.pages.create({
-      parent: {
-        database_id: DATABASE_ID,
-      },
+      parent: { database_id: DATABASE_ID },
       properties: {
         "馬名": {
           title: [
@@ -72,12 +68,12 @@ export default async function handler(req, res) {
           },
         },
       },
-      children: contentBlocks,
+      children: contentBlocks, // ✅ 本文をここに渡す
     });
 
     res.status(200).json({ success: true, notionPageId: response.id });
   } catch (error) {
-    console.error("❌ Notion API Error:", error); // ← エラー詳細出力
+    console.error("❌ Notion API Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 }
