@@ -2,13 +2,13 @@
 
 import { Client } from "@notionhq/client";
 
-// Notionクライアント初期化（トークンは環境変数から、DB IDは直書き）
+// ✅ Notionクライアント初期化
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
 });
 
-// ✅ Notion Database ID をここに直書き
-const DATABASE_ID = "1fee5bd087a980528c40dc22697aad8c"; // ← あなたのDB IDに置き換えてOK
+// ✅ Notion Database ID を直接指定（もしくは process.env.NOTION_DATABASE_ID でもOK）
+const DATABASE_ID = "1fee5bd087a980528c40dc22697aad8c";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -20,6 +20,22 @@ export default async function handler(req, res) {
   if (!notion_horse_name || !notion_race_name || !notion_category || !content) {
     return res.status(400).json({ error: "Missing required fields" });
   }
+
+  // ✅ 長文を分割（Notionのrich_text制限への対策）
+  const contentBlocks = content.match(/(.|[\r\n]){1,1000}/g).map(text => ({
+    object: "block",
+    type: "paragraph",
+    paragraph: {
+      rich_text: [
+        {
+          type: "text",
+          text: {
+            content: text,
+          },
+        },
+      ],
+    },
+  }));
 
   try {
     const response = await notion.pages.create({
@@ -48,3 +64,20 @@ export default async function handler(req, res) {
         "カテゴリ": {
           select: {
             name: notion_category,
+          },
+        },
+        "作成日": {
+          date: {
+            start: new Date().toISOString(),
+          },
+        },
+      },
+      children: contentBlocks,
+    });
+
+    res.status(200).json({ success: true, notionPageId: response.id });
+  } catch (error) {
+    console.error("❌ Notion API Error:", error); // ← エラー詳細出力
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
