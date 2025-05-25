@@ -1,3 +1,5 @@
+// api/get_log_batch.js
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -5,11 +7,11 @@ export default async function handler(req, res) {
 
   const { type, horses } = req.body;
 
-  if (!type || type !== 'hcl' || !Array.isArray(horses)) {
+  if (!type || type !== 'hcl' || !horses) {
     return res.status(400).json({ error: 'Invalid or missing parameters' });
   }
 
-  const gistId = 'd8d3bad3b0efc66db657ee17b14c46da';
+  const gistId = 'd8d3bad3b0efc66db657ee17b14c46da'; // HCL Gist ID
   const filename = 'hcl-master.txt';
 
   try {
@@ -23,6 +25,16 @@ export default async function handler(req, res) {
 
     if (!fileContent) {
       return res.status(404).json({ error: 'hcl-master.txt not found in Gist' });
+    }
+
+    // ✅ 特殊モード：全文をそのまま返す（保存処理向け）
+    if (horses === 'ALL') {
+      return res.status(200).json({ full_text: fileContent });
+    }
+
+    // ✅ 通常モード：指定された馬のみ抽出
+    if (!Array.isArray(horses)) {
+      return res.status(400).json({ error: 'horses must be an array or "ALL"' });
     }
 
     const logs = {};
