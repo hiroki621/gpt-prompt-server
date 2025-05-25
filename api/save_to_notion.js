@@ -1,7 +1,11 @@
 // api/save_to_notion.js
+
 import { Client } from "@notionhq/client";
 
+// ✅ Notionクライアント初期化
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
+
+// ✅ あなたのNotion Database IDに置き換えてください（環境変数化してもOK）
 const DATABASE_ID = "1fee5bd087a980528c40dc22697aad8c";
 
 export default async function handler(req, res) {
@@ -15,7 +19,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // 段落ごとに本文を分割（2つ以上の改行で区切る）
+  // ✅ 本文を段落に分ける（2つ以上の改行で分割）
   const contentBlocks = content
     .split(/\n{2,}/)
     .filter(p => p.trim() !== "")
@@ -35,24 +39,24 @@ export default async function handler(req, res) {
     }));
 
   try {
-    // Step 1: ページ作成（プロパティのみ）
+    // ✅ Step 1：レース名をタイトルにしたページを作成
     const page = await notion.pages.create({
       parent: { database_id: DATABASE_ID },
       properties: {
-        "馬名": {
+        "レース名": {
           title: [
             {
               text: {
-                content: notion_horse_name,
+                content: notion_race_name,
               },
             },
           ],
         },
-        "レース名": {
+        "馬名": {
           rich_text: [
             {
               text: {
-                content: notion_race_name,
+                content: notion_horse_name,
               },
             },
           ],
@@ -70,7 +74,7 @@ export default async function handler(req, res) {
       },
     });
 
-    // Step 2: 本文ブロックをページに追加
+    // ✅ Step 2：本文段落をchildrenとしてページに追加
     await notion.blocks.children.append({
       block_id: page.id,
       children: contentBlocks,
